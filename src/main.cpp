@@ -54,6 +54,19 @@ int main() {
             metersPerPixel *= 1.1;
             std::cout << metersPerPixel << std::endl;
         }
+        // Get panning input
+        if (IsKeyDown(KEY_W)) {
+            center.y += 10;
+        }
+        if (IsKeyDown(KEY_S)) {
+            center.y -= 10;
+        }
+        if (IsKeyDown(KEY_A)) {
+            center.x += 10;
+        }
+        if (IsKeyDown(KEY_D)) {
+            center.x -= 10;
+        }
 
         // Drawing planets to screen
         BeginDrawing();

@@ -17,7 +17,7 @@ __global__ void simulationKernel(Planet* dPlanets, Planet* dNextPlanets, int num
     cg::grid_group grid = cg::this_grid();
     vec3 acc = {0, 0, 0};
     double G = 6.67430e-11; // N*m^2/kg^2
-    float dt = 0.5f;        // seconds
+    float dt = 5;        // seconds
 
     // Return any threads that aren't being used
     if (idx >= numPlanets) {

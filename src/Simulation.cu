@@ -10,34 +10,40 @@
 
 namespace cg = cooperative_groups;
 
+__device__ int frameCounter = 0;
+
 __global__ void simulationKernel(Planet* dPlanets, Planet* dNextPlanets, int numPlanets) {
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
     cg::grid_group grid = cg::this_grid();
-    float3 acc = {0, 0, 0};
-    float G = 1; //6.67430e-11;
-    float dt = 0.001f;
+    vec3 acc = {0, 0, 0};
+    double G = 6.67430e-11; // N*m^2/kg^2
+    float dt = 0.5f;        // seconds
 
     // Return any threads that aren't being used
-    if (idx >= numPlanets)
+    if (idx >= numPlanets) {
         return;
+    }
 
     while (true) {
         // Using Euler's method currently
         // Step 1: Calculate acceleration from all other planets' positions and masses
-        acc = {0, 0, 0};
+        acc = {0, 0, 0};    // meters/second^2
         for (int i = 0; i < numPlanets; i++) {
             if (i == idx)
                 continue;
-            float3 diff = dPlanets[i].pos - dPlanets[idx].pos;
-            float dist2 = dot(diff, diff) + 1e-6f; // avoid div0
+            vec3 diff = dPlanets[i].pos - dPlanets[idx].pos;
+            float dist2 = dot(diff, diff);
             float inv_r = rsqrtf(dist2);
-            acc += diff * G * dPlanets[i].mass * inv_r * inv_r * inv_r;
+            acc += diff * (float)(G * dPlanets[i].mass) * inv_r * inv_r * inv_r;
         }
         dNextPlanets[idx].pos = dPlanets[idx].pos + dPlanets[idx].vel * dt;
         dNextPlanets[idx].vel = dPlanets[idx].vel + acc * dt;
 
         // Step 2: Synchronize all threads across the grid (each thread is 1 planet), and swap our two buffers 
         grid.sync();
+        if (idx == 0)
+            frameCounter += 1;
+
         cuda::std::swap(dPlanets, dNextPlanets);
     }
 }
@@ -52,7 +58,16 @@ void Simulation::getPlanetsFromGPU()
     CudaHelpers::checkCudaErrors();
 }
 
-void Simulation::addPlanet(float3 pos, float3 vel, float mass)
+int Simulation::getFrameCountFromGPU()
+{
+    int hostValue;
+    cudaMemcpyFromSymbolAsync(&hostValue, frameCounter, sizeof(int), 0, cudaMemcpyDeviceToHost, m_dataStream);
+    cudaStreamSynchronize(m_dataStream);
+    CudaHelpers::checkCudaErrors();
+    return hostValue;
+}
+
+void Simulation::addPlanet(vec3 pos, vec3 vel, float mass)
 {
     m_planets.push_back({pos, vel, mass});
 }

@@ -10,9 +10,10 @@ public:
 
     void runSimulation();
     void getPlanetsFromGPU();
+    int getFrameCountFromGPU();
     const Planet& getPlanet(int i) { return m_hPlanets[i]; }
     int getNumPlanets() { return m_numPlanets; }
-    void addPlanet(float3 pos, float3 vel, float mass);
+    void addPlanet(vec3 pos, vec3 vel, float mass);
 
 private:
     std::vector<Planet> m_planets;
